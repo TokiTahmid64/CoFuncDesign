@@ -56,24 +56,6 @@ CoFuncDesign currently supports **six major property types** — three structura
 
 ---
 
-## 📚 **Relation to Course Concepts**
-
-This project inverts the traditional modeling direction—from  
-**_sequence → property_** to **_property → sequence generation_**.  
-It merges **fine-tuning**, **gradient-based optimization**, and **independent evaluation**—bridging *machine learning* and *computational biology* within the context of **protein design**.
-
----
-
-## 📊 **Evaluation Metrics**
-
-Generated sequences are quantitatively assessed using:
-
-- 🎯 **Target Alignment** – performance on the independent evaluator.  
-- 🧩 **Fidelity** – cosine similarity between embeddings of real and generated sequences.  
-- 🌈 **Diversity** – pairwise dissimilarity or n-gram variation between sequences.  
-- 🧠 **Robustness** – correlation between evaluator predictions before and after optimization.
-
----
 
 ## 🧱 **Project Structure**
 
@@ -90,22 +72,15 @@ CoFuncDesign/
 │   │   ├── generate_binding.py
 │   │   ├── generate_sol.py
 │   │   ├── generate_ss.py
-│   │   └── 📁 Visualization/
-│   │       ├── analysis.ipynb
-│   │       ├── solubility_generation_30.csv
-│   │       └── ss_generation_30.csv
+│   │
+│   ├── 📁 Visualization/
+│   │   ├── analysis.ipynb
+│   │   ├── solubility_generation_30.csv
+│   │   └── ss_generation_30.csv
 │
 ├── 📂 Datasets/
 │   └── 📁 Finetuning/
 │       ├── DNA_binding_site_prediction/
 │       ├── secondary_structure/
 │       └── solvent_accessibility/
-│
-├── 📂 figures/
-│   ├── COS551_Proposal.pdf
-│   ├── solubility_distribution.png
-│   ├── dna_binding_distribution.png
-│   └── ss_labels_distribution.png
-│
-├── ref.bib
-└── CoFuncDesign_Proposal.tex
+
