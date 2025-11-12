@@ -24,14 +24,13 @@ print(DEVICE)
 
 
 
-SEARCH_MODEL_NAME = "../Finetuning/Data/esm_model/esm2_t30_150M_UR50D_local"
+SEARCH_MODEL_NAME = "/home/md3204/Research/Toki/CoFuncDesign/Finetuning/Data/esm_model/esm2_t30_150M_UR50D_local"
 SEARCH_HIDDEN_SIZE = 640
-SEARCH_HEAD_PATH = "../Finetuning/Code/checkpoints_sap_150M/best_pcc_esm2_t30_150M_UR50D.pt"
+SEARCH_HEAD_PATH = "/home/md3204/Research/Toki/CoFuncDesign/Finetuning/Code/checkpoints_solubility/best_pcc_esm2_t30_150M_UR50D.pt"
 
-EVAL_MODEL_NAME = "../Finetuning/Data/esm_model/esm2_t33_650M_UR50D_local"
+EVAL_MODEL_NAME = "/home/md3204/Research/Toki/CoFuncDesign/Finetuning/Data/esm_model/esm2_t33_650M_UR50D_local"
 EVAL_HIDDEN_SIZE = 1280
-EVAL_HEAD_PATH = "../Finetuning/Code/checkpoints_sap_650M/best_pcc_esm2_t33_650M_UR50D.pt"
-
+EVAL_HEAD_PATH = "/home/md3204/Research/Toki/CoFuncDesign/Finetuning/Code/checkpoints_solubility/best_pcc_esm2_t33_650M_UR50D.pt"
 AA_LIST = list("ACDEFGHIKLMNPQRSTVWY")
 VOCAB_SIZE = len(AA_LIST)
 
@@ -321,8 +320,12 @@ df = load_proteinglue_csv("../Finetuning/Data/solubility_prediction/asabu_test.c
 print("Loaded data...")
 # sort by sequence length for stability
 df["seq_len"] = df["sequence"].apply(len)
-df = df.sort_values(by="seq_len").reset_index(drop=True)
-df = df.head(30)  # only first few for demo
+
+# only keep sequences with length below 200 for demo
+df = df[df["seq_len"] <= 200].reset_index(drop=True)
+# shuffle
+df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+df = df.head(100)  # only first few for demo
 tokenizer = AutoTokenizer.from_pretrained(SEARCH_MODEL_NAME, local_files_only=True)
 
 allowed_tokens = aa_token_ids(tokenizer)
@@ -391,6 +394,8 @@ for idx, row in df.iterrows():
     # -------------------------------
     pred_np = pred_vec.cpu().numpy()
     pcc = pearsonr(pred_np, tgt_np)[0]
+
+    pcc_gen = pearsonr(pred_gt_np, pred_np)[0]  # generator model performance
     mae = np.mean(np.abs(pred_np - tgt_np))
     mse = np.mean((pred_np - tgt_np)**2)
 
@@ -406,23 +411,16 @@ for idx, row in df.iterrows():
         "original_sequence": seq_native,
         "designed_sequence": designed_seq,
         "length": seq_len,
-        "pcc_original": pcc_gt,
-        "pcc_generated": pcc,
-        "delta_pcc": pcc - pcc_gt,
-        "mae_original": mae_gt,
-        "mae_generated": mae,
-        "delta_mae": mae - mae_gt,
-        "mse_original": mse_gt,
-        "mse_generated": mse
+        "eval_model_performance": pcc_gt, # real output vs real seq prediction from eval model
+        "generator_model_performance": pcc_gen, # generated seq prediction from eval model vs real seq prediction from eval model
+        "robustness": pcc, # real output vs generated seq prediction from eval model
+            
     })
 
 # -----------------------------------------------------
 # ✅ After the loop: convert to DataFrame and save
 # -----------------------------------------------------
 results_df = pd.DataFrame(results)
-results_df.to_csv("designed_sequences_results_shortest_30.csv", index=False)
-print("\n💾 Saved all designed sequences to designed_sequences_results.csv")
+results_df.to_csv("designed_sequences_solubility_results.csv", index=False)
+print("\n💾 Saved all designed sequences to designed_sequences_solubility_results.csv")
 
-# Optional summary
-mean_improvement = results_df["delta_pcc"].mean()
-print(f"\n📊 Average PCC improvement: {mean_improvement:+.4f}")

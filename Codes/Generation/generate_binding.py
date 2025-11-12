@@ -176,13 +176,28 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(SEARCH_MODEL_NAME, local_files_only=True)
     allowed_tokens = tokenizer.convert_tokens_to_ids(AA_LIST)
 
-    fasta_path = "/home/mt3204/Toki/Academic_Projects/COS551/CoFuncDesign/Finetuning/Data/dna_binding_protein/DNA-180-Test.fasta"
+    fasta_path = "/home/md3204/Research/Toki/CoFuncDesign/Finetuning/Data/dna_binding_protein/DNA-180-Test.fasta"
     entries = parse_glmsite_fasta(fasta_path)
 
     sorted_entries = sorted(entries, key=lambda x: len(x[0]))
 
-    # take only the first 50 shortest entries for demo
-    entries = sorted_entries[:50]
+
+    # remove entries greater than 200 residues
+    sorted_entries = [entry for entry in sorted_entries if  entry["seq_len"] <= 200]
+    #now shuffle the entries
+    random.seed(42)
+    random.shuffle(sorted_entries)
+
+    # verify the shuffling worked
+    print(f"First 5 shuffled entries: {sorted_entries[:5]}")
+
+    for entry in sorted_entries:
+        entry.pop("seq_len", None)
+
+
+
+    # take 100 random entries
+    entries = sorted_entries[:100]
     
     
     results = []
@@ -234,6 +249,13 @@ if __name__ == "__main__":
         acc_new = (pred_new == y_true).mean()
         mcc_new = matthews_corrcoef(y_true, pred_new)
 
+
+        # generator model performance : generated seq prediction from eval model vs real seq prediction from eval model
+        # (this is the robustness metric)
+
+        mcc_gen = matthews_corrcoef(pred_gt, pred_new)
+
+
         print(f"✅ Designed seq: {designed_seq[:60]}...")
         print(f"🔹 ACC={acc_new:.3f}, ΔACC={acc_new-acc_gt:+.3f}, "
               f"MCC={mcc_new:.3f}, ΔMCC={mcc_new-mcc_gt:+.3f}")
@@ -243,15 +265,13 @@ if __name__ == "__main__":
             "original_seq": seq,
             "designed_seq": designed_seq,
             "length": L,
-            "acc_original": acc_gt,
-            "acc_generated": acc_new,
-            "delta_acc": acc_new - acc_gt,
-            "mcc_original": mcc_gt,
-            "mcc_generated": mcc_new,
-            "delta_mcc": mcc_new - mcc_gt,
+            "eval_model_performance": mcc_gt, # real output vs real seq prediction from eval model
+            "generator_model_performance": mcc_gen, # generated seq prediction from eval model vs real seq prediction from eval model
+            "robustness": mcc_new, # real output vs generated seq prediction from eval model
+            
+            
         })
 
     df = pd.DataFrame(results)
     df.to_csv("designed_sequences_binding_results.csv", index=False)
     print("\n💾 Saved results to designed_sequences_binding_results.csv")
-    print(f"📈 Mean ΔACC: {df['delta_acc'].mean():+.3f}, Mean ΔMCC: {df['delta_mcc'].mean():+.3f}")
