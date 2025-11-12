@@ -1,98 +1,111 @@
 # CoFuncDesign
 <img width="2327" height="1226" alt="image" src="https://github.com/user-attachments/assets/1e0b643e-25dc-4381-84a3-bc5bbc72fa23" />
 
+# 🧬 **CoFuncDesign: Protein Sequence Design under Conserved Sequence and Functional Constraints**
 
+**CoFuncDesign** is a unified framework for **de novo protein sequence generation** under both **functional** and **structural** constraints.  
+It leverages **protein language models (PLMs)** in a dual-network architecture—a **generator** and an **evaluator**—to design novel protein sequences that meet specific biophysical or biochemical targets.
 
-🧬 CoFuncDesign: Protein Sequence Design under Conserved Sequence and Functional Constraints
+---
 
-CoFuncDesign is a generalized framework for de novo protein sequence generation under both functional and structural constraints.
-It builds on protein language models (PLMs) and introduces a dual-model optimization loop—a generator and an evaluator—to design protein sequences that satisfy desired biological properties.
+## 🚀 **Overview**
 
-🚀 Overview
+Understanding how amino acid sequences encode protein structure and function is a fundamental challenge in computational biology.  
+While predictive models such as **AlphaFold2** and **ESM** learn mappings from *sequence → property*,  
+**CoFuncDesign** addresses the *inverse problem*: generating new protein sequences that exhibit desired functional or structural properties.
 
-Understanding how amino acid sequences encode protein structure and function is a central challenge in computational biology.
-While predictive models like AlphaFold2 and ESM learn mappings from sequence → property, CoFuncDesign tackles the inverse problem: generating new protein sequences given desired structural or functional profiles.
+CoFuncDesign integrates two independently fine-tuned **Evolutionary Scale Modeling (ESM)** networks:
 
-CoFuncDesign integrates two independently fine-tuned PLMs:
+- 🧩 **ESM-150M (Search Model)** — gradient-guided generator proposing candidate sequences.  
+- 🧠 **ESM-650M (Evaluation Model)** — independent evaluator assessing property satisfaction.
 
-ESM-150M (Search Model) – gradient-guided generator that proposes new sequences.
+Together, they form a **generator–evaluator feedback loop** that refines sequences toward user-defined biological objectives, balancing **novelty**, **accuracy**, and **interpretability**.
 
-ESM-650M (Evaluation Model) – independent, unbiased evaluator that scores sequences on the target property.
+---
 
-This generator–evaluator loop enables iterative optimization of sequences toward user-defined objectives while maintaining biological plausibility and interpretability.
+## ⚙️ **Methodology**
 
-⚙️ Methodology
+CoFuncDesign’s workflow consists of **four main stages**:
 
-The workflow consists of four main components:
+1. **🧾 Background Preparation**  
+   Two PLMs (ESM-150M and ESM-650M) are fine-tuned for each target property—one for *generation* and one for *evaluation*—using curated datasets of protein sequences and property annotations.
 
-Background Preparation
-Fine-tune two ESM models on curated datasets for each target property—one for generation, one for evaluation.
+2. **⚡ Gradient-Guided Generation**  
+   A random amino acid sequence is iteratively updated by backpropagating gradients of the loss between predicted and desired property values.
 
-Gradient-Guided Generation
-Initialize a random sequence and iteratively modify residues using backpropagated gradients that minimize deviation from the target property.
+3. **🧮 Evaluation and Stopping Criteria**  
+   The independent evaluation model scores generated sequences periodically. Optimization halts when improvement plateaus.
 
-Evaluation and Stopping Criteria
-Periodically assess generated sequences using the independent evaluation model; stop when improvement plateaus.
+4. **🔒 Sequence Constraints**  
+   Conserved motifs or domains can be masked to preserve biological functionality. Optional probabilistic constraints allow flexible conservation of key residues.
 
-Sequence Constraints
-Enforce conservation by masking functionally important motifs or domains during optimization.
+---
 
-🧩 Target Properties
+## 🧩 **Target Properties**
 
-CoFuncDesign currently supports six major structural and functional property constraints:
+CoFuncDesign currently supports **six major property types** — three structural and three functional:
 
-Category	Property	Dataset	Format	Reference
-Structural	Secondary Structure	PS4 Dataset
-	Multiclass	Peracha et al., 2024
-	Contact Map	CATH Dataset
-	Binary	Sillitoe et al., 2021
-	Distance Map	CATH Dataset
-	Regression	Sillitoe et al., 2021
-Functional	Solubility	SDBRNN
-	Regression	Zhang et al., 2018
-	DNA Binding	TransBind (DNA)
-	Binary	Tahmid et al., 2025
-	RNA Binding	TransBind (RNA)
-	Binary	Tahmid et al., 2025
-🧠 Relation to Course Concepts
+| **Category** | **Property** | **Dataset** | **Format** | **Reference** |
+|--------------|--------------|--------------|-------------|----------------|
+| 🧱 *Structural* | **Secondary Structure** | [PS4 Dataset](https://github.com/omarperacha/ps4-dataset/tree/main/ps4_data/data) | Multiclass | Peracha *et al.*, 2024 |
+|  | **Contact Map** | [CATH Dataset](https://www.cathdb.info/wiki/doku/?id=data:index#non-redundant_data_sets) | Binary | Sillitoe *et al.*, 2021 |
+|  | **Distance Map** | [CATH Dataset](https://www.cathdb.info/wiki/doku/?id=data:index#non-redundant_data_sets) | Regression | Sillitoe *et al.*, 2021 |
+| 🌿 *Functional* | **Solubility** | [SDBRNN](http://210.45.175.81:8080/rsa/sdbrnn.html) | Regression | Zhang *et al.*, 2018 |
+|  | **DNA Binding** | [TransBind (DNA)](https://zenodo.org/records/10215073) | Binary | Tahmid *et al.*, 2025 |
+|  | **RNA Binding** | [TransBind (RNA)](https://zenodo.org/records/10215073) | Binary | Tahmid *et al.*, 2025 |
 
-This project extends protein language modeling and structural property prediction by inverting the conventional prediction direction—moving from
-sequence → property to property → sequence generation.
-It combines model fine-tuning, gradient-based optimization, and independent validation using established computational biology pipelines.
+---
 
-📊 Evaluation Metrics
+## 📚 **Relation to Course Concepts**
 
-Generated sequences are evaluated based on:
+This project inverts the traditional modeling direction—from  
+**_sequence → property_** to **_property → sequence generation_**.  
+It merges **fine-tuning**, **gradient-based optimization**, and **independent evaluation**—bridging *machine learning* and *computational biology* within the context of **protein design**.
 
-Target Alignment – performance under the independent evaluator.
+---
 
-Fidelity – cosine similarity between embeddings of real and generated sequences.
+## 📊 **Evaluation Metrics**
 
-Diversity – n-gram or pairwise sequence dissimilarity.
+Generated sequences are quantitatively assessed using:
 
-Robustness – correlation between evaluator predictions before and after optimization.
+- 🎯 **Target Alignment** – performance on the independent evaluator.  
+- 🧩 **Fidelity** – cosine similarity between embeddings of real and generated sequences.  
+- 🌈 **Diversity** – pairwise dissimilarity or n-gram variation between sequences.  
+- 🧠 **Robustness** – correlation between evaluator predictions before and after optimization.
 
-📂 Project Structure
+---
+
+## 🧱 **Project Structure**
+
+```bash
 CoFuncDesign/
-├── figures/
+│
+├── 📂 Codes/
+│   ├── 📁 Finetuning/
+│   │   ├── finetune_dna_binding_site_pretrain.py
+│   │   ├── finetune_secondary_structure.py
+│   │   └── finetune_solubility.py
+│   │
+│   ├── 📁 Generation/
+│   │   ├── generate_binding.py
+│   │   ├── generate_sol.py
+│   │   ├── generate_ss.py
+│   │   └── 📁 Visualization/
+│   │       ├── analysis.ipynb
+│   │       ├── solubility_generation_30.csv
+│   │       └── ss_generation_30.csv
+│
+├── 📂 Datasets/
+│   └── 📁 Finetuning/
+│       ├── DNA_binding_site_prediction/
+│       ├── secondary_structure/
+│       └── solvent_accessibility/
+│
+├── 📂 figures/
 │   ├── COS551_Proposal.pdf
 │   ├── solubility_distribution.png
 │   ├── dna_binding_distribution.png
 │   └── ss_labels_distribution.png
+│
 ├── ref.bib
 └── CoFuncDesign_Proposal.tex
-
-👥 Contributors
-Name	Department	Year
-Md Toki Tahmid	Computer Science	1st-Year PhD
-Ravi Balasubramanian	Quantitative & Computational Biology	1st-Year PhD
-Lana Glisic	Computer Science	1st-Year MS
-📚 Key References
-
-Rives et al. (2021). Biological structure and function emerge from scaling unsupervised learning to 250 million protein sequences. PNAS.
-
-Madani et al. (2020). ProGen: Language modeling for protein generation. Nature Biotechnology.
-
-Watson et al. (2023). De novo design of proteins using diffusion models. Nature.
-
-Shahgir et al. (2024). RNA-DCGen: Dual-model RNA sequence generation framework. bioRxiv.
