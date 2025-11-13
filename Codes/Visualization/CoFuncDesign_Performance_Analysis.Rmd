@@ -1,0 +1,597 @@
+---
+title: "CoFuncDesign Model Peformance Analysis Code"
+author: "Ravi Nicholas Balasubramanian"
+date: "2025-11-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load dataset
+
+```{r}
+library(ggplot2)
+
+# Define custom command for seqeuence similarity:
+sequence_identity <- function(seq1, seq2) {
+  sum(strsplit(seq1, "")[[1]] == strsplit(seq2, "")[[1]]) / nchar(seq1)
+}
+
+
+### Files and code are expected to be in the same directory. 
+
+###########################################
+# Load test data
+###########################################
+sequenceData <- read.csv("ss_generation_30.csv",row.names=1)
+dataDF <-  data.frame(original = sequenceData[1:nrow(sequenceData),'original_seq'],generated = sequenceData[1:nrow(sequenceData),'designed_seq'], length = as.numeric(sequenceData[1:nrow(sequenceData),'length']),scoreO = as.numeric(sequenceData[1:nrow(sequenceData),'acc_original']),scoreG = as.numeric(sequenceData[1:nrow(sequenceData),'acc_generated']),deltaScore = as.numeric(sequenceData[1:nrow(sequenceData),'delta_acc']))
+# Calculate similarity
+dataDF$similarity <- mapply(sequence_identity, dataDF$original, dataDF$generated)
+
+###########################################
+# Load old solubility data
+###########################################
+solubilityData <- read.csv("solubility_generation_30.csv",row.names=1)
+
+soldataDF <-  data.frame(original = solubilityData[1:nrow(solubilityData),'original_sequence'],generated = solubilityData[1:nrow(solubilityData),'designed_sequence'], length = as.numeric(solubilityData[1:nrow(solubilityData),'length']),pccO = as.numeric(solubilityData[1:nrow(solubilityData),'pcc_original']),pccG = as.numeric(solubilityData[1:nrow(solubilityData),'pcc_generated']),deltaPCC = as.numeric(solubilityData[1:nrow(solubilityData),'delta_pcc']))
+
+soldataDF$similarity <- mapply(sequence_identity, soldataDF$original, soldataDF$generated)
+
+
+###########################################
+# Load DNA binding data
+###########################################
+DNABindingData <- read.csv("designed_sequences_binding_results.csv",row.names=1)
+
+bindingDataDF <-  data.frame(original = DNABindingData[1:nrow(DNABindingData),'original_seq'],generated = DNABindingData[1:nrow(DNABindingData),'designed_seq'], length = as.numeric(DNABindingData[1:nrow(DNABindingData),'length']),evalModPerformance = as.numeric(DNABindingData[1:nrow(DNABindingData),'eval_model_performance']),genModPerformance = as.numeric(DNABindingData[1:nrow(DNABindingData),'generator_model_performance']),robustness = as.numeric(DNABindingData[1:nrow(DNABindingData),'robustness']))
+
+bindingDataDF$similarity <- mapply(sequence_identity, bindingDataDF$original, bindingDataDF$generated)
+
+###########################################
+# Load ss data
+###########################################
+ssData <- read.csv("designed_sequences_ss.csv",row.names=1)
+
+ssDataDF <-  data.frame(original = ssData[1:nrow(ssData),'original_seq'],generated = ssData[1:nrow(ssData),'designed_seq'], length = as.numeric(ssData[1:nrow(ssData),'length']),evalModPerformance = as.numeric(ssData[1:nrow(ssData),'eval_model_performance']),genModPerformance = as.numeric(ssData[1:nrow(ssData),'generator_model_performance']),robustness = as.numeric(ssData[1:nrow(ssData),'robustness']))
+
+ssDataDF$similarity <- mapply(sequence_identity, ssDataDF$original, ssDataDF$generated)
+
+###########################################
+# Load new solubility data 
+###########################################
+solubilityData <- read.csv("designed_sequences_solubility_results.csv",row.names=1)
+
+solubilityDataDF <-  data.frame(original = solubilityData[1:nrow(solubilityData),'original_sequence'],generated = solubilityData[1:nrow(solubilityData),'designed_sequence'], length = as.numeric(solubilityData[1:nrow(solubilityData),'length']),evalModPerformance = as.numeric(solubilityData[1:nrow(solubilityData),'eval_model_performance']),genModPerformance = as.numeric(solubilityData[1:nrow(solubilityData),'generator_model_performance']),robustness = as.numeric(solubilityData[1:nrow(solubilityData),'robustness']))
+
+solubilityDataDF$similarity <- mapply(sequence_identity, solubilityDataDF$original, solubilityDataDF$generated)
+
+
+```
+
+Binning the data by length (for better plots)
+
+```{r}
+
+# Set the bin width (needs to be wide enough to draw meaningful conclusions about the patterns in the data). The more protein sequences we have, and the more evenly spread out they are, the smaller our bin size can be.
+bin_width <- 25
+
+
+#######################
+# Binding data
+#######################
+breaks <- seq(
+  floor(min(bindingDataDF$length, na.rm = TRUE)),
+  ceiling(max(bindingDataDF$length, na.rm = TRUE)) + bin_width,  # add one more bin to cover the top end
+  by = bin_width
+)
+bindingDataDF$length_bin <- cut(
+  bindingDataDF$length,
+  breaks = breaks,
+  include.lowest = TRUE,
+  right = FALSE
+)
+
+#######################
+# SS data
+#######################
+breaks <- seq(
+  floor(min(ssDataDF$length, na.rm = TRUE)),
+  ceiling(max(ssDataDF$length, na.rm = TRUE)) + bin_width,  # add one more bin to cover the top end
+  by = bin_width
+)
+ssDataDF$length_bin <- cut(
+  ssDataDF$length,
+  breaks = breaks,
+  include.lowest = TRUE,
+  right = FALSE
+)
+
+#######################
+# Solubility data
+#######################
+
+breaks <- seq(
+  floor(min(solubilityDataDF$length, na.rm = TRUE)),
+  ceiling(max(solubilityDataDF$length, na.rm = TRUE)) + bin_width,  # add one more bin to cover the top end
+  by = bin_width
+)
+solubilityDataDF$length_bin <- cut(
+  solubilityDataDF$length,
+  breaks = breaks,
+  include.lowest = TRUE,
+  right = FALSE
+)
+```
+
+
+```{r}
+
+###################################################################
+# Histogram of lengths of sequences for test data
+###################################################################
+ggplot(data = dataDF, aes(x=length)) + 
+  geom_histogram(binwidth = 1,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Length of sequences",
+       x = "Length (# Residues)",
+       y = "Frequency")
+
+
+
+###################################################################
+# Histogram of sequence similarity for test data
+###################################################################
+ggplot(data = dataDF, aes(x=similarity)) + 
+  geom_histogram(binwidth = 0.03,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Similarity of seqeuences",
+       x = "Similarity (fraction of identical bases)",
+       y = "Frequency")
+
+
+###################################################################
+# Sequence similarity versus length for test data
+###################################################################
+
+dataSimilarity <- data.frame(length = numeric(0), similarity = numeric(0), stdSimilarity = numeric(0))
+uniqueLengths <- unique(dataDF$length)
+
+for (l in uniqueLengths) {
+  filtered_df <- dataDF[dataDF$length == l, ]
+  if (length(filtered_df$length) == 1){
+  row <- data.frame(length = l, similarity = mean(filtered_df$similarity), stdSimilarity = 0)
+  dataSimilarity <- rbind(dataSimilarity, row)
+  }
+  else {
+  row <- data.frame(length = l, similarity = mean(filtered_df$similarity), stdSimilarity = sd(filtered_df$similarity))
+  dataSimilarity <- rbind(dataSimilarity, row)
+  }
+}
+dataSimilarity$sim_lower <- dataSimilarity$similarity - dataSimilarity$stdSimilarity
+dataSimilarity$sim_upper <- dataSimilarity$similarity + dataSimilarity$stdSimilarity
+
+
+ggplot(data = dataSimilarity, aes(x=length)) + 
+  geom_ribbon(aes(ymin = sim_lower, ymax = sim_upper), fill = "#69b3a2", alpha = 0.2) +
+  geom_line(aes(y=similarity), linetype = "solid",  color = "#69b3a2") +
+  labs(title = "Sequence Similarity Versus Length",
+       x = "Length (# Residues)",
+       y = "Similarity (fraction of identical bases)")
+
+
+
+###################################################################
+# Accuracy (here called performance) versus length for test data
+###################################################################
+dataAvgOverLen <- data.frame(length = numeric(0), avgScoreO = numeric(0), avgScoreG = numeric(0), avgDeltaScore = numeric(0), stdScoreO = numeric(0), stdScoreG = numeric(0), stdDeltaScore = numeric(0))
+
+uniqueLengths <- unique(dataDF$length)
+
+for (l in uniqueLengths) {
+  filtered_df <- dataDF[dataDF$length == l, ]
+  if (length(filtered_df$length) == 1){
+  row <- data.frame(length = l, avgScoreO = mean(filtered_df$scoreO), avgScoreG = mean(filtered_df$scoreG), avgDeltaScore = mean(filtered_df$deltaScore), stdScoreO = 0, stdScoreG = 0, stdDeltaScore = 0)
+  dataAvgOverLen <- rbind(dataAvgOverLen, row)
+  }
+  else {
+  row <- data.frame(length = l, avgScoreO = mean(filtered_df$scoreO), avgScoreG = mean(filtered_df$scoreG), avgDeltaScore = mean(filtered_df$deltaScore), stdScoreO = sd(filtered_df$scoreO), stdScoreG = sd(filtered_df$scoreG), stdDeltaScore = sd(filtered_df$deltaScore))
+  dataAvgOverLen <- rbind(dataAvgOverLen, row)
+  }
+}
+
+dataAvgOverLen$O_lower <- dataAvgOverLen$avgScoreO - dataAvgOverLen$stdScoreO
+dataAvgOverLen$O_upper <- dataAvgOverLen$avgScoreO + dataAvgOverLen$stdScoreO
+dataAvgOverLen$G_lower <- dataAvgOverLen$avgScoreG - dataAvgOverLen$stdScoreG
+dataAvgOverLen$G_upper <- dataAvgOverLen$avgScoreG + dataAvgOverLen$stdScoreG
+dataAvgOverLen$Delta_lower <- dataAvgOverLen$avgDeltaScore - dataAvgOverLen$stdDeltaScore
+dataAvgOverLen$Delta_upper <- dataAvgOverLen$avgDeltaScore + dataAvgOverLen$stdDeltaScore
+
+colors <- c("Original" = "blue", "Generated" = "red", "Delta" = "grey")
+ggplot(data = dataAvgOverLen, aes(x=length)) + 
+  geom_ribbon(aes(ymin = O_lower, ymax = O_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = G_lower, ymax = G_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Delta_lower, ymax = Delta_upper), fill = "grey", alpha = 0.2) +
+  geom_line(aes(y=avgScoreO, color = "Original"), linetype = "solid") +
+  geom_line(aes(y=avgScoreG, color = "Generated"), linetype = "solid") +
+  geom_line(aes(y=avgDeltaScore, color = "Delta"), linetype = "solid") +
+  labs(title = "Performance Versus Length",
+       x = "Length (# Residues)",
+       y = "Performance Scores",
+       color = "Legend") +
+  scale_color_manual(values = colors)
+
+
+###################################################################
+# Performance score versus length for binding data
+###################################################################
+# Note the performance score was determined for both the evaluation and generation models. A robustness score was also calculated. All of these are plotted. 
+
+
+bindingOverLen <- data.frame(length = numeric(0), eval = numeric(0), gen = numeric(0), robustness = numeric(0), stdEval = numeric(0), stdGen = numeric(0), stdRobust = numeric(0))
+
+# Bin data by each length (i.e. calculate the average and std score for each unique length)
+uniqueLengths <- unique(bindingDataDF$length)
+for (l in uniqueLengths) {
+  filtered_df <- bindingDataDF[bindingDataDF$length == l, ]
+  if (length(filtered_df$length) == 1){
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = 0, stdGen = 0, stdRobust = 0)
+  bindingOverLen <- rbind(bindingOverLen, row)
+  }
+  else {
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = sd(filtered_df$evalModPerformance), stdGen = sd(filtered_df$genModPerformance), stdRobust = sd(filtered_df$robustness))
+  bindingOverLen <- rbind(bindingOverLen, row)
+  }
+}
+
+# Determine upper and lower bounds of data to draw shaded error bars
+bindingOverLen$Eval_lower <- bindingOverLen$eval - bindingOverLen$stdEval
+bindingOverLen$Eval_upper <- bindingOverLen$eval + bindingOverLen$stdEval
+bindingOverLen$Gen_lower <- bindingOverLen$gen - bindingOverLen$stdGen
+bindingOverLen$Gen_upper <- bindingOverLen$gen + bindingOverLen$stdGen
+bindingOverLen$Robust_lower <- bindingOverLen$robustness - bindingOverLen$stdRobust
+bindingOverLen$Robust_upper <- bindingOverLen$robustness + bindingOverLen$stdRobust
+
+
+# Define color dictionary for legend
+colors <- c("Eval. Model Performance" = "blue", "Gen. Model Performance" = "red", "Robustness" = "green")
+
+# Plotting
+binding_plot <- ggplot(data = bindingOverLen, aes(x=length)) + 
+  # Shaded error bars are drawn first
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green", alpha = 0.2) +
+  # Line plots of the average data
+  geom_line(aes(y=eval, color = "Eval. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=gen, color = "Gen. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=robustness, color = "Robustness"), linetype = "solid", size = 1.5) +
+  # Labels
+  labs(title = "Performance of Models Versus Length for Binding Data",
+       x = "Length (# Residues)",
+       y = "Scores",
+       color = "Legend") +
+  # Legend
+  scale_color_manual(values = colors) +
+  # Formatting
+  theme(
+    axis.text.x = element_text(size = 25),       # X-axis tick labels
+    axis.title.x = element_text(size = 25,face = "bold"),       # X-axis tick labels
+    axis.text.y = element_text(size = 25,), # Y-axis tick labels
+    axis.title.y = element_text(size = 25,face = "bold"), # Y-axis title
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"), # Plot title
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25)
+  )
+
+ggsave("binding_Performance_plot.png", plot = binding_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+
+
+###################################################################
+# Performance score versus length for ss data
+###################################################################
+# The format of this section is identical to that of the binding dataset section
+
+ssOverLen <- data.frame(length = numeric(0), eval = numeric(0), gen = numeric(0), robustness = numeric(0), stdEval = numeric(0), stdGen = numeric(0), stdRobust = numeric(0))
+
+uniqueLengths <- unique(ssDataDF$length)
+for (l in uniqueLengths) {
+  filtered_df <- ssDataDF[ssDataDF$length == l, ]
+  if (length(filtered_df$length) == 1){
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = 0, stdGen = 0, stdRobust = 0)
+  ssOverLen <- rbind(ssOverLen, row)
+  }
+  else {
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = sd(filtered_df$evalModPerformance), stdGen = sd(filtered_df$genModPerformance), stdRobust = sd(filtered_df$robustness))
+  ssOverLen <- rbind(ssOverLen, row)
+  }
+}
+ssOverLen$Eval_lower <- ssOverLen$eval - ssOverLen$stdEval
+ssOverLen$Eval_upper <- ssOverLen$eval + ssOverLen$stdEval
+ssOverLen$Gen_lower <- ssOverLen$gen - ssOverLen$stdGen
+ssOverLen$Gen_upper <- ssOverLen$gen + ssOverLen$stdGen
+ssOverLen$Robust_lower <- ssOverLen$robustness - ssOverLen$stdRobust
+ssOverLen$Robust_upper <- ssOverLen$robustness + ssOverLen$stdRobust
+
+colors <- c("Eval. Model Performance" = "blue", "Gen. Model Performance" = "red", "Robustness" = "green")
+ss_plot <- ggplot(data = ssOverLen, aes(x=length)) + 
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green", alpha = 0.2) +
+  geom_line(aes(y=eval, color = "Eval. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=gen, color = "Gen. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=robustness, color = "Robustness"), linetype = "solid", size = 1.5) +
+  labs(title = "Performance of Models Versus Length for SS Data",
+       x = "Length (# Residues)",
+       y = "Scores",
+       color = "Legend") +
+  scale_color_manual(values = colors) +
+  theme(
+    axis.text.x = element_text(size = 25),       # X-axis tick labels
+    axis.title.x = element_text(size = 25,face = "bold"),       # X-axis tick labels
+    axis.text.y = element_text(size = 25,), # Y-axis tick labels
+    axis.title.y = element_text(size = 25,face = "bold"), # Y-axis title
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"), # Plot title
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25)
+  )
+
+ggsave("ss_Performance_plot.png", plot = ss_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+
+
+###################################################################
+# Evaluation score versus length for solubility data
+###################################################################
+# The format of this section is identical to that of the binding dataset section
+
+solubilityOverLen <- data.frame(length = numeric(0), eval = numeric(0), gen = numeric(0), robustness = numeric(0), stdEval = numeric(0), stdGen = numeric(0), stdRobust = numeric(0))
+
+uniqueLengths <- unique(solubilityDataDF$length)
+for (l in uniqueLengths) {
+  filtered_df <- solubilityDataDF[solubilityDataDF$length == l, ]
+  if (length(filtered_df$length) == 1){
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = 0, stdGen = 0, stdRobust = 0)
+  solubilityOverLen <- rbind(solubilityOverLen, row)
+  }
+  else {
+  row <- data.frame(length = l, eval = mean(filtered_df$evalModPerformance), gen = mean(filtered_df$genModPerformance), robustness = mean(filtered_df$robustness), stdEval = sd(filtered_df$evalModPerformance), stdGen = sd(filtered_df$genModPerformance), stdRobust = sd(filtered_df$robustness))
+  solubilityOverLen <- rbind(solubilityOverLen, row)
+  }
+}
+solubilityOverLen$Eval_lower <- solubilityOverLen$eval - solubilityOverLen$stdEval
+solubilityOverLen$Eval_upper <- solubilityOverLen$eval + solubilityOverLen$stdEval
+solubilityOverLen$Gen_lower <- solubilityOverLen$gen - solubilityOverLen$stdGen
+solubilityOverLen$Gen_upper <- solubilityOverLen$gen + solubilityOverLen$stdGen
+solubilityOverLen$Robust_lower <- solubilityOverLen$robustness - solubilityOverLen$stdRobust
+solubilityOverLen$Robust_upper <- solubilityOverLen$robustness + solubilityOverLen$stdRobust
+
+colors <- c("Eval. Model Performance" = "blue", "Gen. Model Performance" = "red", "Robustness" = "green")
+ss_plot <- ggplot(data = solubilityOverLen, aes(x=length)) + 
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green", alpha = 0.2) +
+  geom_line(aes(y=eval, color = "Eval. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=gen, color = "Gen. Model Performance"), linetype = "solid", size = 1.5) +
+  geom_line(aes(y=robustness, color = "Robustness"), linetype = "solid", size = 1.5) +
+  labs(title = "Performance of Models Versus Length for SS Data",
+       x = "Length (# Residues)",
+       y = "Scores",
+       color = "Legend") +
+  scale_color_manual(values = colors) +
+  theme(
+    axis.text.x = element_text(size = 25),       # X-axis tick labels
+    axis.title.x = element_text(size = 25,face = "bold"),       # X-axis tick labels
+    axis.text.y = element_text(size = 25,), # Y-axis tick labels
+    axis.title.y = element_text(size = 25,face = "bold"), # Y-axis title
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"), # Plot title
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25)
+  )
+
+ggsave("solubility_Performance_plot.png", plot = ss_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+
+
+```
+
+Better way of making the plots using dyplr (this avoids having to use for loops to produce the necessary binned datasets (this is why we did the binning earlier).
+
+```{r fig.width=12, fig.height=6.5}
+library(dplyr)
+###############################################
+# Binding data
+###############################################
+# In this section we are calculating the means and standard deviations of the performance data in each length bin.
+bindingOverLen <- bindingDataDF %>%
+group_by(length_bin) %>%
+  summarise(
+    length_mean = mean(length),  # average length in the bin
+    eval = mean(evalModPerformance), # average evaluation model performance in the bin
+    gen = mean(genModPerformance), # average generation model performance in the bin
+    robustness_mean = mean(robustness, na.rm = TRUE), # average robustness in the bin
+    stdEval = ifelse(n() > 1, sd(evalModPerformance, na.rm = TRUE), 0), # standard deviation of evaluation model performance in the bin
+    stdGen = ifelse(n() > 1, sd(genModPerformance, na.rm = TRUE), 0), # standard deviation of generation model performance in the bin
+    stdRobust = ifelse(n() > 1, sd(robustness, na.rm = TRUE), 0) # standard deviation of robustness in the bin
+) %>%
+  rename(robustness = robustness_mean) %>%
+  ungroup()
+
+# Here, we are calculating the lower and upper bounds of the data in each bin. This will be used to make a shaded error bar. 
+bindingOverLen <- bindingOverLen %>%
+  mutate(
+    Eval_lower = eval - stdEval,
+    Eval_upper = eval + stdEval,
+    Gen_lower = gen - stdGen,
+    Gen_upper = gen + stdGen,
+    Robust_lower = robustness - stdRobust,
+    Robust_upper = robustness + stdRobust
+  )
+
+# Color dictionary for the legends
+colors <- c(
+  "Eval. Model \n Performance" = "blue",
+  "Gen. Model \n Performance" = "red",
+  "Robustness" = "green4"
+)
+
+# Plotting all data
+binding_plot <- ggplot(data = bindingOverLen, aes(x = length_mean)) +
+  # Shaded error bars drawn first
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green4", alpha = 0.2) +
+  # Line plots of mean data
+  geom_line(aes(y = eval, color = "Eval. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = gen, color = "Gen. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = robustness, color = "Robustness"), size = 1.5) +
+  # Labels
+  labs(
+    title = "Performance of Binding Models Versus Length (Binned)",
+    x = "Mean Length in Bin (# Residues)",
+    y = "Scores",
+    color = "Legend"
+  ) +
+  # Legend
+  scale_color_manual(values = colors) +
+  # Formatting
+  theme(
+    axis.text.x = element_text(size = 25, face = "bold"),
+    axis.title.x = element_text(size = 25, face = "bold"),
+    axis.text.y = element_text(size = 25, face = "bold"),
+    axis.title.y = element_text(size = 25, face = "bold"),
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25),
+    legend.key.size = unit(2, "cm")
+  )
+
+# Save the figure
+ggsave("binding_Performance_Binned_plot.png", plot = binding_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+# ###############################################
+# # SS data
+# ###############################################
+# This section and the next both follow the same structure as above.
+
+ssOverLen <- ssDataDF %>%
+  group_by(length_bin) %>%
+  summarise(
+    length_mean = mean(length),  # average of lengths in the bin
+    eval = mean(evalModPerformance),
+    gen = mean(genModPerformance),
+    robustness_mean = mean(robustness, na.rm = TRUE),
+    stdEval = ifelse(n() > 1, sd(evalModPerformance, na.rm = TRUE), 0),
+    stdGen = ifelse(n() > 1, sd(genModPerformance, na.rm = TRUE), 0),
+    stdRobust = ifelse(n() > 1, sd(robustness, na.rm = TRUE), 0)
+) %>%
+  rename(robustness = robustness_mean) %>%
+  ungroup()
+
+ssOverLen <- ssOverLen %>%
+  mutate(
+    Eval_lower = eval - stdEval,
+    Eval_upper = eval + stdEval,
+    Gen_lower = gen - stdGen,
+    Gen_upper = gen + stdGen,
+    Robust_lower = robustness - stdRobust,
+    Robust_upper = robustness + stdRobust
+  )
+
+colors <- c(
+  "Eval. Model \n Performance" = "blue",
+  "Gen. Model \n Performance" = "red",
+  "Robustness" = "green4"
+)
+
+
+ss_plot <- ggplot(data = ssOverLen, aes(x = length_mean)) +
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green4", alpha = 0.2) +
+  geom_line(aes(y = eval, color = "Eval. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = gen, color = "Gen. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = robustness, color = "Robustness"), size = 1.5) +
+  labs(
+    title = "Performance of SS Models Versus Length (Binned)",
+    x = "Mean Length in Bin (# Residues)",
+    y = "Scores",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = colors) +
+  theme(
+    axis.text.x = element_text(size = 25, face = "bold"),
+    axis.title.x = element_text(size = 25, face = "bold"),
+    axis.text.y = element_text(size = 25, face = "bold"),
+    axis.title.y = element_text(size = 25, face = "bold"),
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25),
+    legend.key.size = unit(2, "cm")
+  )
+
+ggsave("ss_Performance_Binned_plot.png", plot = ss_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+# ###############################################
+# # Solubility data
+# ###############################################
+
+
+solubilityOverLen <- solubilityDataDF %>%
+  group_by(length_bin) %>%
+  summarise(
+    length_mean = mean(length),  # average of lengths in the bin
+    eval = mean(evalModPerformance),
+    gen = mean(genModPerformance),
+    robustness_mean = mean(robustness, na.rm = TRUE),
+    stdEval = ifelse(n() > 1, sd(evalModPerformance, na.rm = TRUE), 0),
+    stdGen = ifelse(n() > 1, sd(genModPerformance, na.rm = TRUE), 0),
+    stdRobust = ifelse(n() > 1, sd(robustness, na.rm = TRUE), 0)
+) %>%
+  rename(robustness = robustness_mean) %>%
+  ungroup()
+
+solubilityOverLen <- solubilityOverLen %>%
+  mutate(
+    Eval_lower = eval - stdEval,
+    Eval_upper = eval + stdEval,
+    Gen_lower = gen - stdGen,
+    Gen_upper = gen + stdGen,
+    Robust_lower = robustness - stdRobust,
+    Robust_upper = robustness + stdRobust
+  )
+
+colors <- c(
+  "Eval. Model \n Performance" = "blue",
+  "Gen. Model \n Performance" = "red",
+  "Robustness" = "green4"
+)
+
+solubility_plot <- ggplot(data = solubilityOverLen, aes(x = length_mean)) +
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green4", alpha = 0.2) +
+  geom_line(aes(y = eval, color = "Eval. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = gen, color = "Gen. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = robustness, color = "Robustness"), size = 1.5) +
+  labs(
+    title = "Performance of Solubility Models Versus Length (Binned)",
+    x = "Mean Length in Bin (# Residues)",
+    y = "Scores",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = colors) +
+  theme(
+    axis.text.x = element_text(size = 25, face = "bold"),
+    axis.title.x = element_text(size = 25, face = "bold"),
+    axis.text.y = element_text(size = 25, face = "bold"),
+    axis.title.y = element_text(size = 25, face = "bold"),
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 25),
+    legend.key.size = unit(2, "cm")
+  )
+
+ggsave("solubility_Performance_Binned_plot.png", plot = solubility_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+```
