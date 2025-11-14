@@ -595,3 +595,44 @@ solubility_plot <- ggplot(data = solubilityOverLen, aes(x = length_mean)) +
 ggsave("solubility_Performance_Binned_plot.png", plot = solubility_plot, width = 30, height = 10, units = "in", dpi = 300)
 
 ```
+
+
+Histograms of length
+
+```{r}
+###################################################################
+# Histogram of lengths of sequences for binding data
+###################################################################
+ggplot(data = bindingDataDF, aes(x=length)) + 
+  geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Length of sequences for binding data",
+       x = "Length (# Residues)",
+       y = "Frequency") +
+  xlim(0,250) +
+  ylim(0,13)
+
+
+###################################################################
+# Histogram of lengths of sequences for ss data
+###################################################################
+ggplot(data = ssDataDF, aes(x=length)) + 
+  geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Length of sequences for ss data",
+       x = "Length (# Residues)",
+       y = "Frequency") +
+  xlim(0,250) +
+  ylim(0,13)
+
+###################################################################
+# Histogram of lengths of sequences for solubility data
+###################################################################
+ggplot(data = solubilityDataDF, aes(x=length)) + 
+  geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Length of sequences for solubility data",
+       x = "Length (# Residues)",
+       y = "Frequency") +
+  xlim(0,250) +
+  ylim(0,13)
+
+
+```
