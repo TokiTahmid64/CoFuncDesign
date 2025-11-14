@@ -6,6 +6,54 @@
 **CoFuncDesign** is a unified framework for **de novo protein sequence generation** under both **functional** and **structural** constraints.  
 It leverages **protein language models (PLMs)** in a dual-network architecture—a **generator** and an **evaluator**—to design novel protein sequences that meet specific biophysical or biochemical targets.
 
+
+
+
+## 🧱 **Project Structure and Team Member Contributions**
+
+```bash
+CoFuncDesign/
+│
+├── 📂 Codes/
+│   │
+│   ├── 📁 Finetuning/ **(Md Toki Tahmid)**
+│   │   ├── finetune_dna_binding_site_prediction.py
+│   │   ├── finetune_secondary_structure.py
+│   │   └── finetune_solubility.py
+│   │
+│   ├── 📁 Generation/ **(Md Toki Tahmid)**
+│   │   ├── generate_binding.py
+│   │   ├── generate_sol.py
+│   │   └── generate_ss.py
+│   │
+│   ├── 📁 Preprocessing/ **(Lana Glisic)**
+│   │   ├── process_distance_map.py
+│   │   └── processed_data.txt
+│   │
+│   └── 📁 Visualization/ **(Ravi Balasubramanian)**
+│       ├── CoFuncDesign_Performance_Analysis.Rmd
+│       ├── designed_sequences_binding_results.csv
+│       ├── designed_sequences_solubility_results.csv
+│       └── designed_sequences_ss.csv
+│
+├── 📂 Datasets/
+│   └── 📁 Finetuning/
+│       │
+│       ├── 📁 DNA_binding_site_prediction/
+│       │   ├── DNA-180-Test.fasta
+│       │   └── DNA-735-Train.fasta
+│       │
+│       ├── 📁 secondary_structure/
+│       │   └── data.csv
+│       │
+│       └── 📁 solvent_accessibility/
+│           ├── asabu_training.csv
+│           ├── asabu_validation.csv
+│           └── asabu_test.csv
+│
+├── LICENSE
+└── README.md
+```
 ---
 
 ## 🚀 **Overview**
@@ -57,30 +105,4 @@ CoFuncDesign currently supports **six major property types** — three structura
 ---
 
 
-## 🧱 **Project Structure**
-
-```bash
-CoFuncDesign/
-│
-├── 📂 Codes/
-│   ├── 📁 Finetuning/
-│   │   ├── finetune_dna_binding_site_pretrain.py
-│   │   ├── finetune_secondary_structure.py
-│   │   └── finetune_solubility.py
-│   │
-│   ├── 📁 Generation/
-│   │   ├── generate_binding.py
-│   │   ├── generate_sol.py
-│   │   ├── generate_ss.py
-│   │
-│   ├── 📁 Visualization/
-│   │   ├── analysis.ipynb
-│   │   ├── solubility_generation_30.csv
-│   │   └── ss_generation_30.csv
-│
-├── 📂 Datasets/
-│   └── 📁 Finetuning/
-│       ├── DNA_binding_site_prediction/
-│       ├── secondary_structure/
-│       └── solvent_accessibility/
 
