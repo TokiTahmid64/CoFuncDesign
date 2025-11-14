@@ -64,21 +64,21 @@ CoFuncDesign/
 │
 ├── 📂 Codes/
 │   │
-│   ├── 📁 Finetuning/ (Md Toki Tahmid)
+│   ├── 📁 Finetuning/ **(Md Toki Tahmid)**
 │   │   ├── finetune_dna_binding_site_prediction.py
 │   │   ├── finetune_secondary_structure.py
 │   │   └── finetune_solubility.py
 │   │
-│   ├── 📁 Generation/ (Md Toki Tahmid)
+│   ├── 📁 Generation/ **(Md Toki Tahmid)**
 │   │   ├── generate_binding.py
 │   │   ├── generate_sol.py
 │   │   └── generate_ss.py
 │   │
-│   ├── 📁 Preprocessing/ (Lana Glisic)
+│   ├── 📁 Preprocessing/ **(Lana Glisic)**
 │   │   ├── process_distance_map.py
 │   │   └── processed_data.txt
 │   │
-│   └── 📁 Visualization/ (Ravi Balasubramanian)
+│   └── 📁 Visualization/ **(Ravi Balasubramanian)**
 │       ├── CoFuncDesign_Performance_Analysis.Rmd
 │       ├── designed_sequences_binding_results.csv
 │       ├── designed_sequences_solubility_results.csv
