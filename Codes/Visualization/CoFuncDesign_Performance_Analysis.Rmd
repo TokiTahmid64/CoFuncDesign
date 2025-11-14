@@ -603,36 +603,37 @@ Histograms of length
 ###################################################################
 # Histogram of lengths of sequences for binding data
 ###################################################################
-ggplot(data = bindingDataDF, aes(x=length)) + 
+lenHistBinding <- ggplot(data = bindingDataDF, aes(x=length)) + 
   geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
   labs(title = "Length of sequences for binding data",
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
   ylim(0,13)
-
+ggsave("lengthHist_Binding.png", plot = lenHistBinding, width = 6, height = 6, units = "in", dpi = 300)
 
 ###################################################################
 # Histogram of lengths of sequences for ss data
 ###################################################################
-ggplot(data = ssDataDF, aes(x=length)) + 
+lenHistSS <- ggplot(data = ssDataDF, aes(x=length)) + 
   geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
   labs(title = "Length of sequences for ss data",
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
   ylim(0,13)
+ggsave("lengthHist_SS.png", plot = lenHistSS, width = 6, height = 6, units = "in", dpi = 300)
 
 ###################################################################
 # Histogram of lengths of sequences for solubility data
 ###################################################################
-ggplot(data = solubilityDataDF, aes(x=length)) + 
+lenHistSolubility <- ggplot(data = solubilityDataDF, aes(x=length)) + 
   geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
   labs(title = "Length of sequences for solubility data",
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
   ylim(0,13)
-
+ggsave("lengthHist_Solubility.png", plot = lenHistSolubility, width = 6, height = 6, units = "in", dpi = 300)
 
 ```
