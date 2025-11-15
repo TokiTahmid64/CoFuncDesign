@@ -12,8 +12,11 @@ It leverages **protein language models (PLMs)** in a dual-network architecture�
 ## 🧱 **Project Structure and Team Member Contributions**
 
 **Lana Glisic:** Dataset Preprocessing and formatting
+
 **Md Toki Tahmid:** Finetuning ESM and Sequence Generation
+
 **Ravi Balasubramanian:** Evaluation and quality analysis of generated sequences
+
 ```bash
 CoFuncDesign/
 │
