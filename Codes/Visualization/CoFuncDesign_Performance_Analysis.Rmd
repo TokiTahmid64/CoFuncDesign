@@ -68,6 +68,16 @@ solubilityDataDF <-  data.frame(original = solubilityData[1:nrow(solubilityData)
 solubilityDataDF$similarity <- mapply(sequence_identity, solubilityDataDF$original, solubilityDataDF$generated)
 
 
+###########################################
+# Load rna binding data 
+###########################################
+RNABindingData <- read.csv("designed_sequences_rna_binding_results.csv",row.names=1)
+
+rnaBindDataDf <-  data.frame(original = RNABindingData[1:nrow(RNABindingData),'original_seq'],generated = RNABindingData[1:nrow(RNABindingData),'designed_seq'], length = as.numeric(RNABindingData[1:nrow(RNABindingData),'length']),evalModPerformance = as.numeric(RNABindingData[1:nrow(RNABindingData),'eval_model_performance']),genModPerformance = as.numeric(RNABindingData[1:nrow(RNABindingData),'generator_model_performance']),robustness = as.numeric(RNABindingData[1:nrow(RNABindingData),'robustness']))
+
+rnaBindDataDf$similarity <- mapply(sequence_identity, rnaBindDataDf$original, rnaBindDataDf$generated)
+
+
 ```
 
 Binning the data by length (for better plots)
@@ -119,6 +129,22 @@ breaks <- seq(
 )
 solubilityDataDF$length_bin <- cut(
   solubilityDataDF$length,
+  breaks = breaks,
+  include.lowest = TRUE,
+  right = FALSE
+)
+
+#######################
+# RNA Binding data
+#######################
+
+breaks <- seq(
+  floor(min(rnaBindDataDf$length, na.rm = TRUE)),
+  ceiling(max(rnaBindDataDf$length, na.rm = TRUE)) + bin_width,  # add one more bin to cover the top end
+  by = bin_width
+)
+rnaBindDataDf$length_bin <- cut(
+  rnaBindDataDf$length,
   breaks = breaks,
   include.lowest = TRUE,
   right = FALSE
@@ -396,6 +422,7 @@ ggsave("solubility_Performance_plot.png", plot = ss_plot, width = 30, height = 1
 ```
 
 Better way of making the plots using dyplr (this avoids having to use for loops to produce the necessary binned datasets (this is why we did the binning earlier).
+Use the code below to generate all official figures.
 
 ```{r fig.width=12, fig.height=6.5}
 library(dplyr)
@@ -456,13 +483,13 @@ binding_plot <- ggplot(data = bindingOverLen, aes(x = length_mean)) +
   scale_color_manual(values = colors) +
   # Formatting
   theme(
-    axis.text.x = element_text(size = 25, face = "bold"),
-    axis.title.x = element_text(size = 25, face = "bold"),
-    axis.text.y = element_text(size = 25, face = "bold"),
-    axis.title.y = element_text(size = 25, face = "bold"),
+    axis.text.x = element_text(size = 30, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.text.y = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
     plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
-    legend.text = element_text(size = 25),
-    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 30),
+    legend.title = element_text(size = 30),
     legend.key.size = unit(2, "cm")
   )
 
@@ -520,13 +547,13 @@ ss_plot <- ggplot(data = ssOverLen, aes(x = length_mean)) +
   ) +
   scale_color_manual(values = colors) +
   theme(
-    axis.text.x = element_text(size = 25, face = "bold"),
-    axis.title.x = element_text(size = 25, face = "bold"),
-    axis.text.y = element_text(size = 25, face = "bold"),
-    axis.title.y = element_text(size = 25, face = "bold"),
+    axis.text.x = element_text(size = 30, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.text.y = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
     plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
-    legend.text = element_text(size = 25),
-    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 30),
+    legend.title = element_text(size = 30),
     legend.key.size = unit(2, "cm")
   )
 
@@ -582,17 +609,80 @@ solubility_plot <- ggplot(data = solubilityOverLen, aes(x = length_mean)) +
   ) +
   scale_color_manual(values = colors) +
   theme(
-    axis.text.x = element_text(size = 25, face = "bold"),
-    axis.title.x = element_text(size = 25, face = "bold"),
-    axis.text.y = element_text(size = 25, face = "bold"),
-    axis.title.y = element_text(size = 25, face = "bold"),
+    axis.text.x = element_text(size = 30, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.text.y = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
     plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
-    legend.text = element_text(size = 25),
-    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 30),
+    legend.title = element_text(size = 30),
     legend.key.size = unit(2, "cm")
   )
 
 ggsave("solubility_Performance_Binned_plot.png", plot = solubility_plot, width = 30, height = 10, units = "in", dpi = 300)
+
+
+# ###############################################
+# # RNA Binding data
+# ###############################################
+
+
+rnaBindingOverLen <- rnaBindDataDf %>%
+  group_by(length_bin) %>%
+  summarise(
+    length_mean = mean(length),  # average of lengths in the bin
+    eval = mean(evalModPerformance),
+    gen = mean(genModPerformance),
+    robustness_mean = mean(robustness, na.rm = TRUE),
+    stdEval = ifelse(n() > 1, sd(evalModPerformance, na.rm = TRUE), 0),
+    stdGen = ifelse(n() > 1, sd(genModPerformance, na.rm = TRUE), 0),
+    stdRobust = ifelse(n() > 1, sd(robustness, na.rm = TRUE), 0)
+) %>%
+  rename(robustness = robustness_mean) %>%
+  ungroup()
+
+rnaBindingOverLen <- rnaBindingOverLen %>%
+  mutate(
+    Eval_lower = eval - stdEval,
+    Eval_upper = eval + stdEval,
+    Gen_lower = gen - stdGen,
+    Gen_upper = gen + stdGen,
+    Robust_lower = robustness - stdRobust,
+    Robust_upper = robustness + stdRobust
+  )
+
+colors <- c(
+  "Eval. Model \n Performance" = "blue",
+  "Gen. Model \n Performance" = "red",
+  "Robustness" = "green4"
+)
+
+rnaBinding_plot <- ggplot(data = rnaBindingOverLen, aes(x = length_mean)) +
+  geom_ribbon(aes(ymin = Eval_lower, ymax = Eval_upper), fill = "blue", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Gen_lower, ymax = Gen_upper), fill = "red", alpha = 0.2) +
+  geom_ribbon(aes(ymin = Robust_lower, ymax = Robust_upper), fill = "green4", alpha = 0.2) +
+  geom_line(aes(y = eval, color = "Eval. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = gen, color = "Gen. Model \n Performance"), size = 1.5) +
+  geom_line(aes(y = robustness, color = "Robustness"), size = 1.5) +
+  labs(
+    title = "Performance of RNA Binding Models Versus Length (Binned)",
+    x = "Mean Length in Bin (# Residues)",
+    y = "Scores",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = colors) +
+  theme(
+    axis.text.x = element_text(size = 30, face = "bold"),
+    axis.title.x = element_text(size = 30, face = "bold"),
+    axis.text.y = element_text(size = 30, face = "bold"),
+    axis.title.y = element_text(size = 30, face = "bold"),
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
+    legend.text = element_text(size = 30),
+    legend.title = element_text(size = 30),
+    legend.key.size = unit(2, "cm")
+  )
+
+ggsave("RNABinding_Performance_Binned_plot.png", plot = rnaBinding_plot, width = 30, height = 10, units = "in", dpi = 300)
 
 ```
 
@@ -635,5 +725,17 @@ lenHistSolubility <- ggplot(data = solubilityDataDF, aes(x=length)) +
   xlim(0,250) +
   ylim(0,13)
 ggsave("lengthHist_Solubility.png", plot = lenHistSolubility, width = 6, height = 6, units = "in", dpi = 300)
+
+###################################################################
+# Histogram of lengths of sequences for rna binding data
+###################################################################
+lenHistSolubility <- ggplot(data = rnaBindDataDf, aes(x=length)) + 
+  geom_histogram(binwidth = 10,fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+  labs(title = "Length of sequences for solubility data",
+       x = "Length (# Residues)",
+       y = "Frequency") +
+  xlim(0,250) +
+  ylim(0,13)
+ggsave("lengthHist_RNABinding.png", plot = lenHistSolubility, width = 6, height = 6, units = "in", dpi = 300)
 
 ```
