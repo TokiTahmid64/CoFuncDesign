@@ -703,7 +703,14 @@ lenHistBinding <- ggplot(data = bindingDataDF, aes(x=length)) +
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
-  ylim(0,13)
+  ylim(0,13) +
+  theme(
+    axis.text.x = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.text.y = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20, hjust = 0.5, face = "bold")
+  )
 ggsave("lengthHist_Binding.png", plot = lenHistBinding, width = 6, height = 6, units = "in", dpi = 300)
 
 ###################################################################
@@ -715,7 +722,14 @@ lenHistSS <- ggplot(data = ssDataDF, aes(x=length)) +
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
-  ylim(0,13)
+  ylim(0,13) +
+  theme(
+    axis.text.x = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.text.y = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20, hjust = 0.5, face = "bold")
+  )
 ggsave("lengthHist_SS.png", plot = lenHistSS, width = 6, height = 6, units = "in", dpi = 300)
 
 ###################################################################
@@ -727,7 +741,14 @@ lenHistSolubility <- ggplot(data = solubilityDataDF, aes(x=length)) +
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
-  ylim(0,13)
+  ylim(0,13) +
+  theme(
+    axis.text.x = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.text.y = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20, hjust = 0.5, face = "bold")
+  )
 ggsave("lengthHist_Solubility.png", plot = lenHistSolubility, width = 6, height = 6, units = "in", dpi = 300)
 
 ###################################################################
@@ -739,7 +760,14 @@ lenHistSolubility <- ggplot(data = rnaBindDataDf, aes(x=length)) +
        x = "Length (# Residues)",
        y = "Frequency") +
   xlim(0,250) +
-  ylim(0,13)
+  ylim(0,13) +
+  theme(
+    axis.text.x = element_text(size = 20, face = "bold"),
+    axis.title.x = element_text(size = 20, face = "bold"),
+    axis.text.y = element_text(size = 20, face = "bold"),
+    axis.title.y = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20, hjust = 0.5, face = "bold")
+  )
 ggsave("lengthHist_RNABinding.png", plot = lenHistSolubility, width = 6, height = 6, units = "in", dpi = 300)
 
 ```
