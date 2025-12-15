@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # Fine-tune ESM2 for DNA-binding residue prediction (GLMSite-style files)
 
+# Written by: Md Toki Tahmid
+
 import os, re, ast, math, json, argparse, random
 from typing import List, Tuple, Dict, Optional
 
