@@ -1,3 +1,6 @@
+
+# Written by: Lana Glisic
+
 import os
 import numpy as np
 
