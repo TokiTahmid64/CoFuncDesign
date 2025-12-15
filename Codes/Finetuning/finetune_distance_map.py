@@ -1,3 +1,10 @@
+#==========================================================
+# Code to finetune Protein distance map from sequence using ESM-150m and ESM-650m models.
+
+# Written by: Lana Glisic
+
+#==========================================================
+
 import os
 from typing import List, Tuple
 import numpy as np
