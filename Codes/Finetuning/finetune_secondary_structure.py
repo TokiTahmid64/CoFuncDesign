@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Train ESM2 for secondary structure prediction (PS4 dataset)
+# Written by: Md Toki Tahmid
 
 import os, math, random
 import pandas as pd
@@ -214,6 +215,7 @@ for epoch in range(10):
         best_acc = val_acc
         torch.save(model.state_dict(), f"{SAVE_DIR}/best_acc_650.pt")
         print(f"✅ Saved best model (ACC={best_acc:.4f})")
+
 
 
 
