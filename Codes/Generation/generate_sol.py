@@ -1,5 +1,7 @@
 # ============================================================
 # Protein sequence design for target solubility using dual ESM2 models
+
+# Written by: Md Toki Tahmid
 # ============================================================
 
 import os, math, random, re
