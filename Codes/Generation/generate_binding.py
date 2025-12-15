@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # ============================================================
 # Protein sequence design for DNA-binding site optimization (GLMSite format)
+
+Written by: Md Toki Tahmid
 # ============================================================
 
 import os, math, random, ast
@@ -274,4 +276,5 @@ if __name__ == "__main__":
 
     df = pd.DataFrame(results)
     df.to_csv("designed_sequences_binding_results.csv", index=False)
+
     print("\n💾 Saved results to designed_sequences_binding_results.csv")
